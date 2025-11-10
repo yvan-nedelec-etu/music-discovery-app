@@ -36,25 +36,39 @@ export default function PlaylistsPage() {
 
 
   useEffect(() => {
-    if (!token) return; // wait for auth check
-    // fetch user playlists when token changes
-    fetchUserPlaylists(token, limit)
+    if (!token) return;
+    setLoading(true);
+    const abort = new AbortController();
+
+    fetchUserPlaylists(token, limit, { signal: abort.signal })
       .then(res => {
-        if (res.error) {
+        if (abort.signal.aborted) return;
+        if (res?.error) {
           if (!handleTokenError(res.error, navigate)) {
             setError(res.error);
           }
+          return;
         }
-        setPlaylists(res.data.items);
+        const items = res?.data?.items;
+        setPlaylists(Array.isArray(items) ? items.filter(Boolean) : []);
       })
-      .catch(err => { setError(err.message); })
-      .finally(() => { setLoading(false); });
+      .catch(err => {
+        if (abort.signal.aborted) return;
+        setError(err?.message || String(err));
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setLoading(false);
+      });
+
+    return () => abort.abort();
   }, [token, navigate]);
 
   return (
     <section className="playlists-container page-container" aria-labelledby="playlists-title">
       <h1 id="playlists-title" className="playlists-title page-title">Your Playlists</h1>
-      <h2 className="playlists-count">{limit} Playlists</h2>
+      <h2 className="playlists-count">
+        {playlists.length} {playlists.length === 1 ? 'Playlist' : 'Playlists'}
+      </h2>
       {loading && <output className="playlists-loading" data-testid="loading-indicator">Loading playlists…</output>}
       {error && !loading && <div className="playlists-error" role="alert">{error}</div>}
       {!loading && !error && (
