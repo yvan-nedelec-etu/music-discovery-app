@@ -9,7 +9,7 @@ import '../PageLayout.css';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Number of playlists to fetch
+ * Number of playlists to fetch per page
  */
 export const limit = 10;
 
@@ -18,22 +18,19 @@ export const limit = 10;
  * @returns {JSX.Element}
  */
 export default function PlaylistsPage() {
-  // Initialize navigate function
   const navigate = useNavigate();
 
-  // state for playlists data
   const [playlists, setPlaylists] = useState([]);
+  const [totalPlaylists, setTotalPlaylists] = useState(0);
 
-  // state for loading and error
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // require token to fetch playlists
   const { token } = useRequireToken();
 
-  // Set document title
-  useEffect(() => { document.title = buildTitle('Playlists'); }, []);
-
+  useEffect(() => {
+    document.title = buildTitle('Playlists');
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -49,8 +46,13 @@ export default function PlaylistsPage() {
           }
           return;
         }
+
         const items = res?.data?.items;
-        setPlaylists(Array.isArray(items) ? items.filter(Boolean) : []);
+        const total = res?.data?.total;
+
+        const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+        setPlaylists(safeItems);
+        setTotalPlaylists(Number.isFinite(total) ? total : safeItems.length);
       })
       .catch(err => {
         if (abort.signal.aborted) return;
@@ -67,13 +69,13 @@ export default function PlaylistsPage() {
     <section className="playlists-container page-container" aria-labelledby="playlists-title">
       <h1 id="playlists-title" className="playlists-title page-title">Your Playlists</h1>
       <h2 className="playlists-count">
-        {playlists.length} {playlists.length === 1 ? 'Playlist' : 'Playlists'}
+        {playlists.length} playlist{playlists.length !== 1 ? 's' : ''} sur {totalPlaylists}
       </h2>
       {loading && <output className="playlists-loading" data-testid="loading-indicator">Loading playlists…</output>}
       {error && !loading && <div className="playlists-error" role="alert">{error}</div>}
       {!loading && !error && (
         <ol className="playlists-list">
-          {playlists.map((playlist) => (
+          {playlists.map(playlist => (
             <PlayListItem key={playlist.id} playlist={playlist} />
           ))}
         </ol>
