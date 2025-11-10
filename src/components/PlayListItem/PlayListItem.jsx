@@ -7,22 +7,45 @@ import '../ListItem.css';
  * @returns JSX.Element
  */
 export default function PlayListItem({ playlist }) {
+  if (!playlist) return null;
+
+  const {
+    id,
+    name = 'Untitled',
+    owner = {},
+    tracks = {},
+    external_urls = {},
+    images
+  } = playlist;
+
+  const coverUrl = Array.isArray(images) && images.length > 0 ? images[0]?.url : null;
+  const ownerName = owner?.display_name || 'Unknown';
+  const tracksTotal = tracks?.total ?? 0;
+  const spotifyLink = external_urls?.spotify || '#';
+
   return (
-  <li key={playlist.id} data-testid={`playlist-item-${playlist.id}`} className="list-item playlist-item">
-      <img
-        src={playlist.images[0]?.url}
-        alt="cover"
-        className="playlist-item-cover"
-      />
+    <li data-testid={`playlist-item-${id}`} className="list-item playlist-item">
+      {coverUrl ? (
+        <img
+          src={coverUrl}
+          alt={`${name} cover`}
+          className="playlist-item-cover"
+        />
+      ) : (
+        <div
+          className="playlist-item-cover playlist-item-cover--placeholder"
+          aria-label="No cover image"
+        />
+      )}
       <div className="playlist-item-details">
         <div className="playlist-item-details-header">
-          <div className="playlist-item-title">{playlist.name}</div>
-          <div className="playlist-item-owner">By {playlist.owner.display_name}</div>
+          <div className="playlist-item-title">{name}</div>
+          <div className="playlist-item-owner">By {ownerName}</div>
         </div>
-        <div className="playlist-item-tracks">{playlist.tracks.total} tracks</div>
+        <div className="playlist-item-tracks">{tracksTotal} tracks</div>
       </div>
       <a
-        href={playlist.external_urls.spotify}
+        href={spotifyLink}
         target="_blank"
         rel="noopener noreferrer"
         className="playlist-link"
