@@ -23,7 +23,7 @@ describe('PlayListItem component', () => {
         // items are rendered correctly
         expect(screen.getByTestId(`playlist-item-${playlist.id}`)).toBeInTheDocument();
         // image is rendered correctly
-        expect(screen.getByAltText('cover')).toHaveAttribute('src', playlist.images[0].url);
+        expect(screen.getByAltText(`${playlist.name} cover`)).toHaveAttribute('src', playlist.images[0].url);
         // text content is rendered correctly
         expect(screen.getByText(playlist.name)).toBeInTheDocument();
         // owner name is rendered correctly

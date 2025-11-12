@@ -73,16 +73,20 @@ describe('PlaylistsPage', () => {
 
         // when loading is done, verify playlists content rendered and api called correctly
 
-        // should call fetchUserPlaylists with the token
+        // should call fetchUserPlaylists with the token (now includes signal)
         expect(spotifyApi.fetchUserPlaylists).toHaveBeenCalledTimes(1);
-        expect(spotifyApi.fetchUserPlaylists).toHaveBeenCalledWith(tokenValue, limit);
+        expect(spotifyApi.fetchUserPlaylists).toHaveBeenCalledWith(
+            tokenValue, 
+            limit, 
+            expect.objectContaining({ signal: expect.any(Object) })
+        );
 
         // should render a heading of level 1 with text 'Your Playlists'
         const heading = await screen.findByRole('heading', { level: 1, name: 'Your Playlists' });
         expect(heading).toBeInTheDocument();
 
-        // should render heading of level 2 showing total playlist count
-        const countHeading = await screen.findByRole('heading', { level: 2, name: `${limit} Playlists` });
+        // should render heading of level 2 showing loaded count and total
+        const countHeading = await screen.findByRole('heading', { level: 2, name: '2 playlists sur 2' });
         expect(countHeading).toBeInTheDocument();
 
         // verify each playlist item rendered, don't check details here as covered in PlaylistItem tests
@@ -150,8 +154,8 @@ describe('PlaylistsPage', () => {
         const heading1 = screen.getByRole('heading', { level: 1, name: `Your Playlists` });
         expect(heading1).toHaveClass('playlists-title', 'page-title');
 
-        // should have heading level 2 with appropriate class name
-        const heading2 = screen.getByRole('heading', { level: 2, name: `${limit} Playlists` });
+        // should have heading level 2 with appropriate class name (updated format)
+        const heading2 = screen.getByRole('heading', { level: 2, name: '2 playlists sur 2' });
         expect(heading2).toHaveClass('playlists-count');
 
         // should have ordered list with appropriate class name
