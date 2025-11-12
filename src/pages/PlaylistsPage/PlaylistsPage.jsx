@@ -69,7 +69,7 @@ export default function PlaylistsPage() {
     <section className="playlists-container page-container" aria-labelledby="playlists-title">
       <h1 id="playlists-title" className="playlists-title page-title">Your Playlists</h1>
       <h2 className="playlists-count">
-        {playlists.length} playlist{playlists.length !== 1 ? 's' : ''} sur {totalPlaylists}
+        {playlists.length} playlist{playlists.length !== 1 ? 's' : ''} of {totalPlaylists}
       </h2>
       {loading && <output className="playlists-loading" data-testid="loading-indicator">Loading playlists…</output>}
       {error && !loading && <div className="playlists-error" role="alert">{error}</div>}

@@ -161,4 +161,57 @@ describe('PlaylistsPage', () => {
         const list = screen.getByRole('list');
         expect(list).toHaveClass('playlists-list');
     });
+
+    test('aborts fetch when component unmounts', async () => {
+        // Mock fetchUserPlaylists with a delay
+        const mockFetch = jest.spyOn(spotifyApi, 'fetchUserPlaylists').mockImplementation(() => 
+            new Promise(resolve => setTimeout(() => resolve({ data: playlistsData, error: null }), 100))
+        );
+
+        const { unmount } = renderPlaylistsPage();
+
+        // Wait for initial render and fetch call
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            tokenValue,
+            limit,
+            expect.objectContaining({ signal: expect.any(Object) })
+        );
+
+        // Unmount immediately to trigger abort
+        unmount();
+
+        // Wait a bit to ensure abort was processed
+        await new Promise(resolve => setTimeout(resolve, 150));
+    });
+
+    test('handles playlists with null items in array', async () => {
+        // Mock with null items
+        jest.spyOn(spotifyApi, 'fetchUserPlaylists').mockResolvedValue({
+            data: {
+                items: [
+                    playlistsData.items[0],
+                    null,
+                    playlistsData.items[1],
+                    undefined
+                ],
+                total: 4
+            },
+            error: null
+        });
+
+        renderPlaylistsPage();
+        await waitForLoadingToFinish();
+
+        // Should only render non-null playlists
+        expect(await screen.findByTestId('playlist-item-playlist1')).toBeInTheDocument();
+        expect(await screen.findByTestId('playlist-item-playlist2')).toBeInTheDocument();
+        
+        // Count should reflect filtered items
+        const countHeading = screen.getByRole('heading', { level: 2 });
+        expect(countHeading).toHaveTextContent('2 playlists sur 4');
+    });
 });
