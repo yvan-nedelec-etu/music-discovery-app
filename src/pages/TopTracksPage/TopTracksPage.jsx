@@ -37,21 +37,31 @@ export default function TopTracksPage() {
   // set document title
   useEffect(() => { document.title = buildTitle('Top Tracks'); }, []);
 
-
   useEffect(() => {
     if (!token) return; // wait for check or redirect
-    // fetch user top tracks when token changes
-    fetchUserTopTracks(token, limit, timeRange)
+    setLoading(true);
+    const abort = new AbortController();
+
+    fetchUserTopTracks(token, limit, timeRange, { signal: abort.signal })
       .then(res => {
-        if (res.error) {
+        if (abort.signal.aborted) return;
+        if (res?.error) {
           if (!handleTokenError(res.error, navigate)) {
             setError(res.error);
           }
+          return; // stop processing on error
         }
-        setTracks(res.data.items);
+        setTracks(res?.data?.items ?? []);
       })
-      .catch(err => { setError(err.message); })
-      .finally(() => { setLoading(false); });
+      .catch(err => {
+        if (abort.signal.aborted) return;
+        setError(err?.message || String(err));
+      })
+      .finally(() => {
+        if (!abort.signal.aborted) setLoading(false);
+      });
+
+    return () => abort.abort();
   }, [token, navigate]);
 
   return (

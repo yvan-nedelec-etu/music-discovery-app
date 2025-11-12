@@ -30,7 +30,7 @@ describe('TopArtistItem component', () => {
         // details assertions
         expect(listItem).toHaveTextContent(artist.name);
         expect(listItem).toHaveTextContent(`Genres: ${artist.genres.join(', ')}`);
-        expect(listItem).toHaveTextContent(`Followers: ${artist.followers.total.toLocaleString()}`);
+        expect(listItem).toHaveTextContent(/Followers:\s*1[\s,]000/);
         expect(listItem).toHaveTextContent(`Popularity: ${artist.popularity}`);
 
         // link to artist page
@@ -62,7 +62,7 @@ describe('TopArtistItem component', () => {
         // details assertions
         expect(listItem).toHaveTextContent(artist.name);
         expect(listItem).toHaveTextContent(`Genres: ${artist.genres.join(', ')}`);
-        expect(listItem).toHaveTextContent(`Followers: ${artist.followers.total.toLocaleString()}`);
+        expect(listItem).toHaveTextContent(/Followers:\s*500/);
 
         // link to artist page
         const link = within(listItem).getByRole('link', { name: /view artist/i });
