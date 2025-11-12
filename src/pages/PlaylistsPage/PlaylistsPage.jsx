@@ -34,7 +34,7 @@ export default function PlaylistsPage() {
 
   useEffect(() => {
     if (!token) return;
-    setLoading(true);
+    
     const abort = new AbortController();
 
     fetchUserPlaylists(token, limit, { signal: abort.signal })
@@ -43,6 +43,7 @@ export default function PlaylistsPage() {
         if (res?.error) {
           if (!handleTokenError(res.error, navigate)) {
             setError(res.error);
+            setLoading(false);
           }
           return;
         }
@@ -53,13 +54,12 @@ export default function PlaylistsPage() {
         const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
         setPlaylists(safeItems);
         setTotalPlaylists(Number.isFinite(total) ? total : safeItems.length);
+        setLoading(false);
       })
       .catch(err => {
         if (abort.signal.aborted) return;
         setError(err?.message || String(err));
-      })
-      .finally(() => {
-        if (!abort.signal.aborted) setLoading(false);
+        setLoading(false);
       });
 
     return () => abort.abort();
