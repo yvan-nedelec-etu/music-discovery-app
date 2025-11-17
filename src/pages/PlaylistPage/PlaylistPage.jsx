@@ -54,7 +54,10 @@ export default function PlaylistPage() {
     if (loading) {
         return (
             <div className="playlist-page-container page-container">
-                <output className="playlist-loading" role="status" data-testid="loading-indicator">
+                <output
+                    className="playlist-loading"
+                    data-testid="loading-indicator"
+                >
                     Loading playlist...
                 </output>
             </div>
