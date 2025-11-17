@@ -5,7 +5,7 @@ import { fetchPlaylistById } from '../../api/spotify-playlists.js';
 import { handleTokenError } from '../../utils/handleTokenError.js';
 import { buildTitle } from '../../constants/appMeta.js';
 import TrackItem from '../../components/TrackItem/TrackItem.jsx';
-import './PlaylistPage.css';
+import '../../styles/PlaylistDetailPage.css';
 import '../PageLayout.css';
 
 export default function PlaylistPage() {
@@ -54,7 +54,7 @@ export default function PlaylistPage() {
     if (loading) {
         return (
             <div className="playlist-page-container page-container">
-                <output className="playlist-loading" data-testid="loading-indicator">
+                <output className="playlist-loading" role="status" data-testid="loading-indicator">
                     Loading playlist...
                 </output>
             </div>
