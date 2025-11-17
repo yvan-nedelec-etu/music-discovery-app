@@ -27,10 +27,10 @@ describe('TopArtistItem component', () => {
         expect(img).toBeInTheDocument();
         expect(img).toHaveAttribute('src', artist.images[1].url);
 
-        // details assertions
-        expect(listItem).toHaveTextContent(artist.name);
+        // details assertions - index should display as 1 (0 + 1)
+        expect(listItem).toHaveTextContent(`1. ${artist.name}`);
         expect(listItem).toHaveTextContent(`Genres: ${artist.genres.join(', ')}`);
-        expect(listItem).toHaveTextContent(`Followers: ${artist.followers.total.toLocaleString()}`);
+        expect(listItem).toHaveTextContent(/Followers:\s*1[\s,]000/);
         expect(listItem).toHaveTextContent(`Popularity: ${artist.popularity}`);
 
         // link to artist page
@@ -59,10 +59,10 @@ describe('TopArtistItem component', () => {
         // should not contain artist image (query by alt)
         expect(within(listItem).queryByAltText(artist.name)).not.toBeInTheDocument();
 
-        // details assertions
-        expect(listItem).toHaveTextContent(artist.name);
+        // details assertions - index should display as 2 (1 + 1)
+        expect(listItem).toHaveTextContent(`2. ${artist.name}`);
         expect(listItem).toHaveTextContent(`Genres: ${artist.genres.join(', ')}`);
-        expect(listItem).toHaveTextContent(`Followers: ${artist.followers.total.toLocaleString()}`);
+        expect(listItem).toHaveTextContent(/Followers:\s*500/);
 
         // link to artist page
         const link = within(listItem).getByRole('link', { name: /view artist/i });
