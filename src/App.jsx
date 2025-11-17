@@ -1,14 +1,13 @@
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import WelcomePage from './pages/WelcomePage/WelcomePage.jsx';
-import TopTracksPage from './pages/TopTracksPage/TopTracksPage.jsx';
-import TopArtistsPage from './pages/TopArtistsPage/TopArtistsPage.jsx';
-import PlaylistsPage from './pages/PlaylistsPage/PlaylistsPage.jsx';
-import PlaylistPage from './pages/PlaylistPage/PlaylistPage.jsx'; 
-import Callback from './pages/Callback.jsx';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout/Layout.jsx';
+import WelcomePage from './pages/WelcomePage/WelcomePage.jsx';
 import LoginPage from './pages/LoginPage/LoginPage.jsx';
-import NotFoundPage from './pages/NotFoundPage/NotFoundPage.jsx';
 import AccountPage from './pages/AccountPage/AccountPage.jsx';
+import NotFoundPage from './pages/NotFoundPage/NotFoundPage.jsx';
+import PlaylistsPage from './pages/PlaylistsPage/PlaylistsPage.jsx';
+import PlaylistPage from './pages/PlaylistPage/PlaylistPage.jsx';
+import TopArtistsPage from './pages/TopArtistsPage/TopArtistsPage.jsx';
+import TopTracksPage from './pages/TopTracksPage/TopTracksPage.jsx';
 
 function App() {
   return (
