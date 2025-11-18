@@ -41,9 +41,12 @@ export default function DashboardPage() {
   return (
     <section className="dashboard-page page-container" data-testid="dashboard-page">
       <h1 className="page-title">Dashboard</h1>
+      <p className="dashboard-subtitle">Your top artist and track</p>
+
       {loading && <div data-testid="dashboard-loading">Loading...</div>}
+
       {!loading && (
-        <>
+        <div className="dashboard-cards">
           {errorArtists ? (
             <div className="dashboard-error" role="alert" data-testid="dashboard-artists-error">
               {errorArtists}
@@ -56,26 +59,28 @@ export default function DashboardPage() {
                 imageUrl={artists.items[0].images?.[0]?.url}
                 subtitle={artists.items[0].genres?.slice(0, 3).join(', ') || 'Genres inconnus'}
                 description="Artiste le plus écouté"
+                link={artists.items[0].external_urls?.spotify}
               />
             )
           )}
 
-            {errorTracks ? (
-              <div className="dashboard-error" role="alert" data-testid="dashboard-tracks-error">
-                {errorTracks}
-              </div>
-            ) : (
-              tracks?.items?.[0] && (
-                <SimpleCard
-                  data-testid="top-track-card"
-                  title={tracks.items[0].name}
-                  imageUrl={tracks.items[0].album?.images?.[0]?.url}
-                  subtitle={tracks.items[0].artists?.map(a => a.name).join(', ') || 'Artistes inconnus'}
-                  description="Piste la plus écoutée"
-                />
-              )
-            )}
-        </>
+          {errorTracks ? (
+            <div className="dashboard-error" role="alert" data-testid="dashboard-tracks-error">
+              {errorTracks}
+            </div>
+          ) : (
+            tracks?.items?.[0] && (
+              <SimpleCard
+                data-testid="top-track-card"
+                title={tracks.items[0].name}
+                imageUrl={tracks.items[0].album?.images?.[0]?.url}
+                subtitle={tracks.items[0].artists?.map(a => a.name).join(', ') || 'Artistes inconnus'}
+                description="Piste la plus écoutée"
+                link={tracks.items[0].external_urls?.spotify}
+              />
+            )
+          )}
+        </div>
       )}
     </section>
   );
