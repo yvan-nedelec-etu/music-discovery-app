@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { buildTitle } from '../../constants/appMeta.js';
 import { useRequireToken } from '../../hooks/useRequireToken.js';
 import { fetchUserTopArtists, fetchUserTopTracks } from '../../api/spotify-top.js';
+import SimpleCard from '../../components/SimpleCard/SimpleCard.jsx';
 
 export default function DashboardPage() {
   const { token } = useRequireToken();
@@ -11,9 +12,7 @@ export default function DashboardPage() {
   const [errorTracks, setErrorTracks] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    document.title = buildTitle('Dashboard');
-  }, []);
+  useEffect(() => { document.title = buildTitle('Dashboard'); }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -27,8 +26,6 @@ export default function DashboardPage() {
         if (aRes.error) setErrorArtists(aRes.error); else setArtists(aRes.data);
         if (tRes.error) setErrorTracks(tRes.error); else setTracks(tRes.data);
         setLoading(false);
-        if (aRes.data) console.log('[dashboard] topArtists[0]', aRes.data.items?.[0]);
-        if (tRes.data) console.log('[dashboard] topTracks[0]', tRes.data.items?.[0]);
       })
       .catch(err => {
         if (abort.signal.aborted) return;
@@ -45,12 +42,24 @@ export default function DashboardPage() {
       <h1 className="page-title">Dashboard</h1>
       {loading && <div data-testid="dashboard-loading">Loading...</div>}
       {!loading && (
-        <pre className="dashboard-debug" style={{ fontSize: '0.75rem' }}>
-          Artists loaded: {Boolean(artists)} | Tracks loaded: {Boolean(tracks)}
-        </pre>
+        <>
+          {errorArtists ? (
+            <div className="dashboard-error" role="alert" data-testid="dashboard-artists-error">
+              {errorArtists}
+            </div>
+          ) : (
+            artists?.items?.[0] && (
+              <SimpleCard
+                data-testid="top-artist-card"
+                title={artists.items[0].name}
+                imageUrl={artists.items[0].images?.[0]?.url}
+                subtitle={artists.items[0].genres?.slice(0, 3).join(', ') || 'Genres inconnus'}
+                description="Artiste le plus écouté"
+              />
+            )
+          )}
+        </>
       )}
-      {errorArtists && <div role="alert" style={{ display: 'none' }}>{errorArtists}</div>}
-      {errorTracks && <div role="alert" style={{ display: 'none' }}>{errorTracks}</div>}
     </section>
   );
 }
