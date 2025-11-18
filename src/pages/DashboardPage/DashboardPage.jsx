@@ -41,12 +41,14 @@ export default function DashboardPage() {
   return (
     <section className="dashboard-page page-container" data-testid="dashboard-page">
       <h1 className="page-title">Dashboard</h1>
-      <p className="dashboard-subtitle">Your top artist and track</p>
+      <p className="dashboard-subtitle" aria-describedby="dashboard-cards">
+        Your top artist and track
+      </p>
 
       {loading && <div data-testid="dashboard-loading">Loading...</div>}
 
       {!loading && (
-        <div className="dashboard-cards">
+        <div id="dashboard-cards" className="dashboard-cards">
           {errorArtists ? (
             <div className="dashboard-error" role="alert" data-testid="dashboard-artists-error">
               {errorArtists}
