@@ -3,6 +3,7 @@ import { buildTitle } from '../../constants/appMeta.js';
 import { useRequireToken } from '../../hooks/useRequireToken.js';
 import { fetchUserTopArtists, fetchUserTopTracks } from '../../api/spotify-top.js';
 import SimpleCard from '../../components/SimpleCard/SimpleCard.jsx';
+import '../../styles/DashboardPage.css';
 
 export default function DashboardPage() {
   const { token } = useRequireToken();
@@ -58,6 +59,22 @@ export default function DashboardPage() {
               />
             )
           )}
+
+            {errorTracks ? (
+              <div className="dashboard-error" role="alert" data-testid="dashboard-tracks-error">
+                {errorTracks}
+              </div>
+            ) : (
+              tracks?.items?.[0] && (
+                <SimpleCard
+                  data-testid="top-track-card"
+                  title={tracks.items[0].name}
+                  imageUrl={tracks.items[0].album?.images?.[0]?.url}
+                  subtitle={tracks.items[0].artists?.map(a => a.name).join(', ') || 'Artistes inconnus'}
+                  description="Piste la plus écoutée"
+                />
+              )
+            )}
         </>
       )}
     </section>
