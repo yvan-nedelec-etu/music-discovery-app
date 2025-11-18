@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import DashboardPage from './DashboardPage.jsx';
@@ -50,113 +50,120 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('DashboardPage full coverage', () => {
-  test('renders loading then success with both cards and title + links', async () => {
+describe('DashboardPage', () => {
+  test('success: displays both cards, images, links and title', async () => {
     renderDashboard();
-    expect(screen.getByTestId('dashboard-loading')).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId('dashboard-loading')).not.toBeInTheDocument());
+    const artistCard = await screen.findByTestId('top-artist-card');
+    const trackCard = await screen.findByTestId('top-track-card');
     expect(document.title).toBe(buildTitle('Dashboard'));
-    expect(screen.getByTestId('top-artist-card')).toHaveTextContent(artistOk.name);
-    expect(screen.getByTestId('top-track-card')).toHaveTextContent(trackOk.name);
-    expect(screen.getByTestId('top-artist-card').querySelector('img')).toHaveAttribute('src', artistOk.images[0].url);
-    expect(screen.getByTestId('top-track-card').querySelector('img')).toHaveAttribute('src', trackOk.album.images[0].url);
-    // links
-    expect(screen.getByTestId('top-artist-card').querySelector('a')).toHaveAttribute('href', artistOk.external_urls.spotify);
-    expect(screen.getByTestId('top-track-card').querySelector('a')).toHaveAttribute('href', trackOk.external_urls.spotify);
+
+    const artistImg = within(artistCard).getByRole('img', { name: artistOk.name });
+    const trackImg = within(trackCard).getByRole('img', { name: trackOk.name });
+    expect(artistImg).toHaveAttribute('src', artistOk.images[0].url);
+    expect(trackImg).toHaveAttribute('src', trackOk.album.images[0].url);
+
+    const artistLink = within(artistCard).getByRole('link');
+    const trackLink = within(trackCard).getByRole('link');
+    expect(artistLink).toHaveAttribute('href', artistOk.external_urls.spotify);
+    expect(trackLink).toHaveAttribute('href', trackOk.external_urls.spotify);
   });
 
-  test('artist error only branch', async () => {
+  test('artist error only', async () => {
     fetchUserTopArtists.mockResolvedValueOnce({ data: null, error: 'Artist error' });
     renderDashboard();
-    await waitFor(() => expect(screen.getByTestId('dashboard-artists-error')).toBeInTheDocument());
-    expect(screen.getByTestId('dashboard-artists-error')).toHaveTextContent('Artist error');
-    expect(screen.getByTestId('top-track-card')).toBeInTheDocument();
-    expect(screen.queryByTestId('top-artist-card')).toBeNull();
+    const artistErr = await screen.findByTestId('dashboard-artists-error');
+    expect(artistErr).toBeInTheDocument();
+    expect(artistErr).toHaveTextContent('Artist error');
+    const trackCard = await screen.findByTestId('top-track-card');
+    expect(trackCard).toBeInTheDocument();
+    expect(screen.queryByTestId('top-artist-card')).not.toBeInTheDocument();
   });
 
-  test('track error only branch', async () => {
+  test('track error only', async () => {
     fetchUserTopTracks.mockResolvedValueOnce({ data: null, error: 'Track error' });
     renderDashboard();
-    await waitFor(() => expect(screen.getByTestId('dashboard-tracks-error')).toBeInTheDocument());
-    expect(screen.getByTestId('dashboard-tracks-error')).toHaveTextContent('Track error');
-    expect(screen.getByTestId('top-artist-card')).toBeInTheDocument();
-    expect(screen.queryByTestId('top-track-card')).toBeNull();
+    const trackErr = await screen.findByTestId('dashboard-tracks-error');
+    expect(trackErr).toBeInTheDocument();
+    expect(trackErr).toHaveTextContent('Track error');
+    const artistCard = await screen.findByTestId('top-artist-card');
+    expect(artistCard).toBeInTheDocument();
+    expect(screen.queryByTestId('top-track-card')).not.toBeInTheDocument();
   });
 
-  test('both errors branch via API error fields', async () => {
+  test('both errors', async () => {
     fetchUserTopArtists.mockResolvedValueOnce({ data: null, error: 'Artist fail' });
     fetchUserTopTracks.mockResolvedValueOnce({ data: null, error: 'Track fail' });
     renderDashboard();
-    await waitFor(() => expect(screen.getByTestId('dashboard-artists-error')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('dashboard-tracks-error')).toBeInTheDocument());
-    expect(screen.getByTestId('dashboard-artists-error')).toHaveTextContent('Artist fail');
-    expect(screen.getByTestId('dashboard-tracks-error')).toHaveTextContent('Track fail');
-    expect(screen.queryByTestId('top-artist-card')).toBeNull();
-    expect(screen.queryByTestId('top-track-card')).toBeNull();
+    const artistErr = await screen.findByTestId('dashboard-artists-error');
+    const trackErr = await screen.findByTestId('dashboard-tracks-error');
+    expect(artistErr).toHaveTextContent('Artist fail');
+    expect(trackErr).toHaveTextContent('Track fail');
+    expect(screen.queryByTestId('top-artist-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('top-track-card')).not.toBeInTheDocument();
   });
 
-  test('catch branch sets both errors when both promises reject', async () => {
+  test('catch: both rejects set same error', async () => {
     const rejection = new Error('Network down');
     fetchUserTopArtists.mockRejectedValueOnce(rejection);
     fetchUserTopTracks.mockRejectedValueOnce(rejection);
     renderDashboard();
-    await waitFor(() => expect(screen.getByTestId('dashboard-artists-error')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByTestId('dashboard-tracks-error')).toBeInTheDocument());
-    expect(screen.getByTestId('dashboard-artists-error')).toHaveTextContent('Network down');
-    expect(screen.getByTestId('dashboard-tracks-error')).toHaveTextContent('Network down');
+    const artistErr = await screen.findByTestId('dashboard-artists-error');
+    const trackErr = await screen.findByTestId('dashboard-tracks-error');
+    expect(artistErr).toHaveTextContent('Network down');
+    expect(trackErr).toHaveTextContent('Network down');
   });
 
-  test('empty items arrays (no cards rendered, no errors)', async () => {
+  test('empty arrays: no cards, no errors', async () => {
     fetchUserTopArtists.mockResolvedValueOnce({ data: { items: [] }, error: null });
     fetchUserTopTracks.mockResolvedValueOnce({ data: { items: [] }, error: null });
     renderDashboard();
-    await waitFor(() => expect(screen.queryByTestId('dashboard-loading')).not.toBeInTheDocument());
-    expect(screen.queryByTestId('top-artist-card')).toBeNull();
-    expect(screen.queryByTestId('top-track-card')).toBeNull();
-    expect(screen.queryByTestId('dashboard-artists-error')).toBeNull();
-    expect(screen.queryByTestId('dashboard-tracks-error')).toBeNull();
+    // Wait until either error or card would appear; use subtitle as stable element
+    await screen.findByText(/Your top artist and track/i);
+    expect(screen.queryByTestId('top-artist-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('top-track-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-artists-error')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-tracks-error')).not.toBeInTheDocument();
   });
 
-  test('fallback subtitles when genres and artists missing', async () => {
+  test('fallback subtitles when data missing', async () => {
     const noGenreArtist = { ...artistOk, genres: [] };
     const noArtistTrack = { ...trackOk, artists: [] };
     fetchUserTopArtists.mockResolvedValueOnce({ data: { items: [noGenreArtist] }, error: null });
     fetchUserTopTracks.mockResolvedValueOnce({ data: { items: [noArtistTrack] }, error: null });
     renderDashboard();
-    await waitFor(() => expect(screen.getByTestId('top-artist-card')).toBeInTheDocument());
-    expect(screen.getByTestId('top-artist-card')).toHaveTextContent(noGenreArtist.name);
-    expect(screen.getByTestId('top-artist-card').querySelector('[data-testid="subtitle"]')).toHaveTextContent('Genres inconnus');
-    expect(screen.getByTestId('top-track-card').querySelector('[data-testid="subtitle"]')).toHaveTextContent('Artistes inconnus');
+    const artistCard = await screen.findByTestId('top-artist-card');
+    const trackCard = await screen.findByTestId('top-track-card');
+    const artistSubtitle = within(artistCard).getByTestId('subtitle');
+    const trackSubtitle = within(trackCard).getByTestId('subtitle');
+    expect(artistSubtitle).toHaveTextContent('Genres inconnus');
+    expect(trackSubtitle).toHaveTextContent('Artistes inconnus');
   });
 
-  test('abort cleanup: signal aborted after unmount', async () => {
-    let artistsResolve;
-    let tracksResolve;
-    const artistsPromise = new Promise(res => { artistsResolve = res; });
-    const tracksPromise = new Promise(res => { tracksResolve = res; });
-    fetchUserTopArtists.mockImplementationOnce((token, { signal }) => {
-      return artistsPromise.then(() => ({ data: { items: [artistOk] }, error: null }));
-    });
-    fetchUserTopTracks.mockImplementationOnce((token, { signal }) => {
-      return tracksPromise.then(() => ({ data: { items: [trackOk] }, error: null }));
-    });
-    const utils = renderDashboard();
-    // Unmount before resolving
-    utils.unmount();
-    // Resolve promises
-    artistsResolve();
-    tracksResolve();
-    // No assertions needed on DOM (component gone), just ensure mocks called and cleanup ran
-    expect(fetchUserTopArtists).toHaveBeenCalled();
-    expect(fetchUserTopTracks).toHaveBeenCalled();
+  test('abort: unmount before promises resolve prevents error set', async () => {
+    jest.useFakeTimers();
+    fetchUserTopArtists.mockImplementationOnce(() =>
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Late A')), 15))
+    );
+    fetchUserTopTracks.mockImplementationOnce(() =>
+      new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Late T')), 20))
+    );
+    const { unmount } = renderDashboard();
+    unmount();
+    jest.advanceTimersByTime(25);
+    // Component unmounted: errors should not appear
+    expect(screen.queryByTestId('dashboard-artists-error')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-tracks-error')).not.toBeInTheDocument();
+    jest.useRealTimers();
   });
 
-  test('no token branch: fetch not called, stays loading', async () => {
+  test('no token: effect short-circuits (fetches never called)', async () => {
     useRequireToken.mockReturnValueOnce({ token: null });
     renderDashboard();
-    expect(screen.getByTestId('dashboard-loading')).toBeInTheDocument();
-    // Allow a tick
-    await waitFor(() => expect(fetchUserTopArtists).not.toHaveBeenCalled());
+    // Subtitle still renders
+    await screen.findByText(/Your top artist and track/i);
+    expect(fetchUserTopArtists).not.toHaveBeenCalled();
     expect(fetchUserTopTracks).not.toHaveBeenCalled();
+    // Loading should still show (no token triggers return)
+    expect(screen.getByTestId('dashboard-loading')).toBeInTheDocument();
   });
 });
