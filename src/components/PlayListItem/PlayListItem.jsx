@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import './PlayListItem.css';
+import '../ListItem.css';
 
 /**
  * Playlist item component
@@ -40,10 +41,10 @@ export default function PlayListItem({ playlist }) {
 
       <div className="playlist-item-details">
         <div className="playlist-item-details-header">
-          {/* ✅ lien interne attendu par les tests */}
-          <a href={`/playlist/${id}`} className="playlist-item-title">
+          {/* lien interne */}
+          <Link to={`/playlist/${id}`} className="playlist-item-title">
             {name}
-          </a>
+          </Link>
 
           <div className="playlist-item-owner">By {ownerName}</div>
         </div>
@@ -57,6 +58,7 @@ export default function PlayListItem({ playlist }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
+        className="playlist-link"
       >
         Open
       </a>
