@@ -9,7 +9,7 @@ import '../PageLayout.css';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Number of playlists to fetch
+ * Number of playlists to fetch per page
  */
 export const limit = 10;
 
@@ -18,48 +18,64 @@ export const limit = 10;
  * @returns {JSX.Element}
  */
 export default function PlaylistsPage() {
-  // Initialize navigate function
   const navigate = useNavigate();
 
-  // state for playlists data
   const [playlists, setPlaylists] = useState([]);
+  const [totalPlaylists, setTotalPlaylists] = useState(0);
 
-  // state for loading and error
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // require token to fetch playlists
   const { token } = useRequireToken();
 
-  // Set document title
-  useEffect(() => { document.title = buildTitle('Playlists'); }, []);
-
+  useEffect(() => {
+    document.title = buildTitle('Playlists');
+  }, []);
 
   useEffect(() => {
-    if (!token) return; // wait for auth check
-    // fetch user playlists when token changes
-    fetchUserPlaylists(token, limit)
+    if (!token) return;
+    
+    const abort = new AbortController();
+
+    fetchUserPlaylists(token, limit, { signal: abort.signal })
       .then(res => {
-        if (res.error) {
+        if (abort.signal.aborted) return;
+        if (res?.error) {
           if (!handleTokenError(res.error, navigate)) {
             setError(res.error);
+            setLoading(false);
           }
+          return;
         }
-        setPlaylists(res.data.items);
+
+        const items = res?.data?.items;
+        const total = res?.data?.total;
+
+        const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+        setPlaylists(safeItems);
+        setTotalPlaylists(Number.isFinite(total) ? total : safeItems.length);
+        setLoading(false);
       })
-      .catch(err => { setError(err.message); })
-      .finally(() => { setLoading(false); });
+      .catch(err => {
+        if (abort.signal.aborted) return;
+        setError(err?.message || String(err));
+        setLoading(false);
+      });
+
+    return () => abort.abort();
   }, [token, navigate]);
 
   return (
     <section className="playlists-container page-container" aria-labelledby="playlists-title">
       <h1 id="playlists-title" className="playlists-title page-title">Your Playlists</h1>
-      <h2 className="playlists-count">{limit} Playlists</h2>
+      <h2 className="playlists-count">
+        {playlists.length} playlist{playlists.length !== 1 ? 's' : ''} of {totalPlaylists}
+      </h2>
       {loading && <output className="playlists-loading" data-testid="loading-indicator">Loading playlists…</output>}
       {error && !loading && <div className="playlists-error" role="alert">{error}</div>}
       {!loading && !error && (
         <ol className="playlists-list">
-          {playlists.map((playlist) => (
+          {playlists.map(playlist => (
             <PlayListItem key={playlist.id} playlist={playlist} />
           ))}
         </ol>
