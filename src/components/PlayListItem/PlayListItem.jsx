@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom';
 import './PlayListItem.css';
-import '../ListItem.css';
 
 /**
  * Playlist item component
@@ -56,7 +56,7 @@ export default function PlayListItem({ playlist }) {
         href={spotifyLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="playlist-link"
+        onClick={(e) => e.stopPropagation()}
       >
         Open
       </a>

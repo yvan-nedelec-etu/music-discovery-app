@@ -1,51 +1,28 @@
-var dotenv = require("dotenv");
-dotenv.config({ path: ".env.local" });
+const { setGlobalDispatcher, ProxyAgent, Agent } = require('undici');
 
-/**
- * Encodes client ID and secret for Basic Auth.
- * @param {*} clientId 
- * @param {*} clientSecret 
- * @returns 
- */
-function encodeBasicAuth(clientId, clientSecret) {
-  return Buffer.from(clientId + ":" + clientSecret, "utf8").toString("base64");
-}
+function initNetwork() {
+  const proxy =
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy ||
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy ||
+    process.env.npm_config_proxy ||
+    process.env.npm_config_https_proxy;
 
-/**
- * Generates an access token using client credentials.
- * @returns 
- */
-function generateAccessToken() {
-  var clientId = process.env.SPOTIFY_CLIENT_ID;
-  var clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    return Promise.reject(
-      new Error(
-        "Missing SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET in .env.local"
-      )
-    );
-  }
-  var base64AuthString = encodeBasicAuth(clientId, clientSecret);
-  return fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + base64AuthString,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=client_credentials",
-  })
-    .then(function (response) {
-      return response.json();
-    })
-    .then(function (data) {
-      if (data.error) {
-        console.error("Error fetching access token:", data.error);
-        throw new Error("Error fetching access token: " + data.error.message);
+  if (proxy) {
+    try {
+      const agent = new ProxyAgent(proxy);
+      setGlobalDispatcher(agent);
+      if (process.env.DEBUG_PROXY === '1') {
+        console.log('[sandbox] Using proxy:', proxy);
       }
-      return data.access_token;
-    });
+    } catch (e) {
+      console.warn('[sandbox] Failed to set proxy agent:', e.message);
+    }
+  } else {
+    // Dispatcher par défaut (pas de proxy)
+    setGlobalDispatcher(new Agent({ connections: 10, pipelining: 1 }));
+  }
 }
 
-module.exports = {
-  generateAccessToken,
-};
+module.exports = { initNetwork };

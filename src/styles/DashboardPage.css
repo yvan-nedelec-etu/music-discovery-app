@@ -1,0 +1,129 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 2rem;
+}
+
+.page-title {
+  text-align: center;
+}
+
+.dashboard-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.7;
+  margin: -0.4rem 0 0.8rem;
+  letter-spacing: .5px;
+  color: #222;
+}
+
+.dashboard-cards {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: stretch;
+}
+
+@media (min-width: 1100px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(2, minmax(300px, 1fr));
+  }
+}
+
+.dashboard-error {
+  padding: 1rem;
+  border: 1px solid #d22;
+  background: #fff;
+  color: #d22;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-page .simple-card {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  border: 1px solid #e2e2e2;
+  padding: 1rem;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111;
+  box-shadow: 0 4px 10px rgba(0,0,0,.06);
+  transition: box-shadow .15s, transform .15s;
+  min-height: 100%;
+}
+
+.dashboard-page .simple-card:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  transform: translateY(-2px);
+}
+
+.dashboard-page .simple-card__image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 1px 3px rgba(0,0,0,.18);
+}
+
+@media (min-width: 900px) {
+  .dashboard-page .simple-card__image {
+    height: 200px;
+  }
+}
+
+.dashboard-page .simple-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  font-weight: 600;
+  color: #111;
+}
+
+.dashboard-page .simple-card__subtitle {
+  margin: 0;
+  font-size: .8rem;
+  opacity: .75;
+  color: #222;
+}
+
+.dashboard-page .simple-card__description {
+  margin: .15rem 0 .35rem;
+  font-size: .75rem;
+  opacity: .65;
+  color: #333;
+}
+
+/* Replace only the button styles */
+.dashboard-page .simple-card__button {
+  margin-top: auto;
+  align-self: flex-start;
+  background: #1DB954; /* Spotify green */
+  color: #fff;
+  text-decoration: none;
+  font-size: .73rem;
+  padding: .5rem .75rem;
+  border-radius: 4px;
+  transition: background .15s, transform .15s;
+}
+
+.dashboard-page .simple-card__button:hover {
+  background: #169c45; /* darker */
+  transform: translateY(-2px);
+}
+
+.dashboard-debug {
+  margin-top: .5rem;
+  opacity: .6;
+  font-family: monospace;
+  white-space: pre-wrap;
+  color: #444;
+}
