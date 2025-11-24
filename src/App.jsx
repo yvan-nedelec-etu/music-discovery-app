@@ -9,6 +9,7 @@ import PlaylistPage from './pages/PlaylistPage/PlaylistPage.jsx';
 import TopArtistsPage from './pages/TopArtistsPage/TopArtistsPage.jsx';
 import TopTracksPage from './pages/TopTracksPage/TopTracksPage.jsx';
 import DashboardPage from './pages/DashboardPage/DashboardPage.jsx';
+import Callback from './pages/Callback.jsx';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<WelcomePage />} />
           <Route path="login" element={<LoginPage />} />
+          <Route path="callback" element={<Callback />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="playlists" element={<PlaylistsPage />} />
           <Route path="playlist/:id" element={<PlaylistPage />} />
