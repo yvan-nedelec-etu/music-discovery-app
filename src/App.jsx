@@ -8,6 +8,7 @@ import PlaylistsPage from './pages/PlaylistsPage/PlaylistsPage.jsx';
 import PlaylistPage from './pages/PlaylistPage/PlaylistPage.jsx';
 import TopArtistsPage from './pages/TopArtistsPage/TopArtistsPage.jsx';
 import TopTracksPage from './pages/TopTracksPage/TopTracksPage.jsx';
+import DashboardPage from './pages/DashboardPage/DashboardPage.jsx';
 
 function App() {
   return (
@@ -21,7 +22,9 @@ function App() {
           <Route path="playlist/:id" element={<PlaylistPage />} />
           <Route path="top-artists" element={<TopArtistsPage />} />
           <Route path="top-tracks" element={<TopTracksPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="*" element={<NotFoundPage />} />
+            
         </Route>
       </Routes>
     </Router>
