@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom';
 import './PlayListItem.css';
-import '../ListItem.css';
 
 /**
  * Playlist item component
@@ -7,25 +7,38 @@ import '../ListItem.css';
  * @returns JSX.Element
  */
 export default function PlayListItem({ playlist }) {
+  if (!playlist) return null;
+
+  const coverImage = playlist.images?.[0]?.url;
+  const playlistName = playlist.name || 'Untitled';
+  const ownerName = playlist.owner?.display_name || 'Unknown';
+  const trackCount = playlist.tracks?.total || 0;
+  const spotifyUrl = playlist.external_urls?.spotify || '#';
+
   return (
-  <li key={playlist.id} data-testid={`playlist-item-${playlist.id}`} className="list-item playlist-item">
-      <img
-        src={playlist.images[0]?.url}
-        alt="cover"
-        className="playlist-item-cover"
-      />
-      <div className="playlist-item-details">
-        <div className="playlist-item-details-header">
-          <div className="playlist-item-title">{playlist.name}</div>
-          <div className="playlist-item-owner">By {playlist.owner.display_name}</div>
+    <li className="list-item playlist-item" data-testid={`playlist-item-${playlist.id}`}>
+      <Link to={`/playlist/${playlist.id}`} className="playlist-item-link">
+        {coverImage ? (
+          <img src={coverImage} alt={`${playlistName} cover`} className="playlist-item-cover" />
+        ) : (
+          <div className="playlist-item-cover-placeholder" aria-label="No cover image" />
+        )}
+        <div className="playlist-item-details">
+          <div className="playlist-item-details-header">
+            <div className="playlist-item-title">{playlistName}</div>
+            <div className="playlist-item-owner">By {ownerName}</div>
+          </div>
+          <div className="playlist-item-tracks">
+            {trackCount} {trackCount === 1 ? 'track' : 'tracks'}
+          </div>
         </div>
-        <div className="playlist-item-tracks">{playlist.tracks.total} tracks</div>
-      </div>
+      </Link>
       <a
-        href={playlist.external_urls.spotify}
+        className="playlist-link"
+        href={spotifyUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="playlist-link"
+        onClick={(e) => e.stopPropagation()}
       >
         Open
       </a>
