@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import './PlayListItem.css';
+import '../ListItem.css';
 
 /**
  * Playlist item component
@@ -9,36 +10,55 @@ import './PlayListItem.css';
 export default function PlayListItem({ playlist }) {
   if (!playlist) return null;
 
-  const coverImage = playlist.images?.[0]?.url;
-  const playlistName = playlist.name || 'Untitled';
-  const ownerName = playlist.owner?.display_name || 'Unknown';
-  const trackCount = playlist.tracks?.total || 0;
-  const spotifyUrl = playlist.external_urls?.spotify || '#';
+  const {
+    id,
+    name = 'Untitled',
+    owner = {},
+    tracks = {},
+    external_urls = {},
+    images
+  } = playlist;
+
+  const coverUrl = Array.isArray(images) && images.length > 0 ? images[0]?.url : null;
+  const ownerName = owner?.display_name || 'Unknown';
+  const tracksTotal = tracks?.total ?? 0;
+  const spotifyLink = external_urls?.spotify || '#';
 
   return (
-    <li className="list-item playlist-item" data-testid={`playlist-item-${playlist.id}`}>
-      <Link to={`/playlist/${playlist.id}`} className="playlist-item-link">
-        {coverImage ? (
-          <img src={coverImage} alt={`${playlistName} cover`} className="playlist-item-cover" />
-        ) : (
-          <div className="playlist-item-cover-placeholder" aria-label="No cover image" />
-        )}
-        <div className="playlist-item-details">
-          <div className="playlist-item-details-header">
-            <div className="playlist-item-title">{playlistName}</div>
-            <div className="playlist-item-owner">By {ownerName}</div>
-          </div>
-          <div className="playlist-item-tracks">
-            {trackCount} {trackCount === 1 ? 'track' : 'tracks'}
-          </div>
+    <li data-testid={`playlist-item-${id}`} className="list-item playlist-item">
+      {coverUrl ? (
+        <img
+          src={coverUrl}
+          alt={`${name} cover`}
+          className="playlist-item-cover"
+        />
+      ) : (
+        <div
+          className="playlist-item-cover playlist-item-cover--placeholder"
+          aria-label="No cover image"
+        />
+      )}
+
+      <div className="playlist-item-details">
+        <div className="playlist-item-details-header">
+          {/* lien interne */}
+          <Link to={`/playlist/${id}`} className="playlist-item-title">
+            {name}
+          </Link>
+
+          <div className="playlist-item-owner">By {ownerName}</div>
         </div>
-      </Link>
+
+        <div className="playlist-item-tracks">{tracksTotal} tracks</div>
+      </div>
+
+      {/* lien Spotify externe */}
       <a
-        className="playlist-link"
-        href={spotifyUrl}
+        href={spotifyLink}
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
+        className="playlist-link"
       >
         Open
       </a>

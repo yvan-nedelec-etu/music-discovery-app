@@ -21,42 +21,49 @@ export const timeRange = 'short_term';
  * @returns {JSX.Element}
  */
 export default function TopTracksPage() {
-  // Initialize navigate function
   const navigate = useNavigate();
 
-  // state for tracks data
   const [tracks, setTracks] = useState([]);
 
-  // state for loading and error
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // require token to fetch top tracks
   const { token } = useRequireToken();
 
-  // set document title
-  useEffect(() => { document.title = buildTitle('Top Tracks'); }, []);
-
+  useEffect(() => { 
+    document.title = buildTitle('Top Tracks'); 
+  }, []);
 
   useEffect(() => {
-    if (!token) return; // wait for check or redirect
-    // fetch user top tracks when token changes
-    fetchUserTopTracks(token, limit, timeRange)
+    if (!token) return;
+    
+    const abort = new AbortController();
+
+    fetchUserTopTracks(token, limit, timeRange, { signal: abort.signal })
       .then(res => {
-        if (res.error) {
+        if (abort.signal.aborted) return;
+        if (res?.error) {
           if (!handleTokenError(res.error, navigate)) {
             setError(res.error);
           }
+          setLoading(false);
+          return;
         }
-        setTracks(res.data.items);
+        setTracks(res?.data?.items ?? []);
+        setLoading(false);
       })
-      .catch(err => { setError(err.message); })
-      .finally(() => { setLoading(false); });
+      .catch(err => {
+        if (abort.signal.aborted) return;
+        setError(err?.message || String(err));
+        setLoading(false);
+      });
+
+    return () => abort.abort();
   }, [token, navigate]);
 
   return (
     <section className="tracks-container page-container" aria-labelledby="tracks-title">
-      <h1 id="tracks-title" className="tracks-title page-title" >Your Top {tracks.length} Tracks of the Month</h1>
+      <h1 id="tracks-title" className="tracks-title page-title">Your Top {tracks.length} Tracks of the Month</h1>
       {loading && <output className="tracks-loading" data-testid="loading-indicator">Loading top tracks…</output>}
       {error && !loading && <div className="tracks-error" role="alert">{error}</div>}
       {!loading && !error && (
