@@ -37,13 +37,21 @@ export default function PlayListItem({ playlist }) {
           aria-label="No cover image"
         />
       )}
+
       <div className="playlist-item-details">
         <div className="playlist-item-details-header">
-          <div className="playlist-item-title">{name}</div>
+          {/* ✅ lien interne attendu par les tests */}
+          <a href={`/playlist/${id}`} className="playlist-item-title">
+            {name}
+          </a>
+
           <div className="playlist-item-owner">By {ownerName}</div>
         </div>
+
         <div className="playlist-item-tracks">{tracksTotal} tracks</div>
       </div>
+
+      {/* lien Spotify externe */}
       <a
         href={spotifyLink}
         target="_blank"
