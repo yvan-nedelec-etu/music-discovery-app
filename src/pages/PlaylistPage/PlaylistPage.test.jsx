@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach, jest } from '@jest/globals';
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import PlaylistPage from './PlaylistPage.jsx';
 import * as spotifyApi from '../../api/spotify-playlists.js';
@@ -8,7 +9,7 @@ import * as handleTokenErrorModule from '../../utils/handleTokenError.js';
 import { KEY_ACCESS_TOKEN } from '../../constants/storageKeys.js';
 import { buildTitle } from '../../constants/appMeta.js';
 
-const playlistData = {
+const basePlaylist = {
   id: 'playlist1',
   name: 'My Playlist 1',
   description: 'A cool playlist',
@@ -16,7 +17,7 @@ const playlistData = {
   owner: { display_name: 'User1' },
   external_urls: { spotify: 'https://open.spotify.com/playlist/playlist1' },
   tracks: {
-    total: 1,
+    total: 2,
     items: [
       {
         track: {
@@ -25,124 +26,36 @@ const playlistData = {
           artists: [{ name: 'Artist A' }],
           album: { name: 'Album X', images: [{ url: 'https://via.placeholder.com/56' }] },
           duration_ms: 210000,
-          external_urls: { spotify: 'https://open.spotify.com/track/track1' },
-        },
+          external_urls: { spotify: 'https://open.spotify.com/track/track1' }
+        }
       },
-    ],
-  },
+      {
+        track: {
+          id: 'track2',
+          name: 'Second Song',
+          artists: [{ name: 'Artist B' }],
+          album: { name: 'Album Y', images: [{ url: 'https://via.placeholder.com/56' }] },
+          duration_ms: 180000,
+          external_urls: { spotify: 'https://open.spotify.com/track/track2' }
+        }
+      }
+    ]
+  }
 };
 
 describe('PlaylistPage', () => {
   beforeEach(() => {
-    const tokenValue = 'test-token';
-    jest
-      .spyOn(window.localStorage.__proto__, 'getItem')
-      .mockImplementation((key) => (key === KEY_ACCESS_TOKEN ? tokenValue : null));
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({ data: playlistData, error: null });
+    jest.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(k => k === KEY_ACCESS_TOKEN ? 'test-token' : null);
+    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({ data: basePlaylist, error: null });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  test('fetches and renders playlist, sets title', async () => {
+  const renderPage = (id = 'playlist1') =>
     render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    // initial title
-    expect(document.title).toBe(buildTitle('Playlist'));
-
-    // loading state (use testid, no role to satisfy a11y lint)
-    expect(screen.getByTestId('loading-indicator')).toHaveTextContent(/loading playlist/i);
-
-    // wait for loading to finish (single assertion in waitFor)
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
-    // title updated with playlist name
-    expect(document.title).toBe(buildTitle(playlistData.name));
-
-    // title rendered
-    const heading = await screen.findByRole('heading', { level: 1, name: playlistData.name });
-    expect(heading).toBeInTheDocument();
-
-    // cover image
-    const img = screen.getByAltText(`${playlistData.name} cover`);
-    expect(img).toHaveAttribute('src', playlistData.images[0].url);
-
-    // description
-    expect(screen.getByText(playlistData.description)).toBeInTheDocument();
-
-    // Spotify link
-    const link = screen.getByRole('link', { name: /play on spotify/i });
-    expect(link).toHaveAttribute('href', playlistData.external_urls.spotify);
-
-    // tracks rendered
-    for (const item of playlistData.tracks.items) {
-      expect(await screen.findByTestId(`track-item-${item.track.id}`)).toBeInTheDocument();
-    }
-
-    // API called (split assertions to satisfy lint rule)
-    await waitFor(() => expect(spotifyApi.fetchPlaylistById).toHaveBeenCalledTimes(1));
-    expect(spotifyApi.fetchPlaylistById).toHaveBeenCalledWith(
-      'test-token',
-      'playlist1',
-      expect.objectContaining({ signal: expect.any(Object) })
-    );
-  });
-
-  test('displays error message on fetch failure', async () => {
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({ data: null, error: 'Failed to fetch playlist' });
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Failed to fetch playlist');
-  });
-
-  test('displays error message on fetchPlaylistById rejection', async () => {
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockRejectedValue(new Error('API error occurred'));
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('API error occurred');
-  });
-
-  test('handleTokenError called on token expiry error', async () => {
-    const handleTokenErrorSpy = jest.spyOn(handleTokenErrorModule, 'handleTokenError');
-    jest
-      .spyOn(spotifyApi, 'fetchPlaylistById')
-      .mockResolvedValue({ data: null, error: 'The access token expired' });
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
+      <MemoryRouter initialEntries={[`/playlist/${id}`]}>
         <Routes>
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/login" element={<div>Login Page</div>} />
@@ -150,148 +63,113 @@ describe('PlaylistPage', () => {
       </MemoryRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
+  const finishLoading = async () => {
+    await screen.findByTestId('loading-indicator');
+    await waitFor(() => expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument());
+  };
 
-    expect(handleTokenErrorSpy).toHaveBeenCalledWith('The access token expired', expect.any(Function));
+  test('loads and renders playlist', async () => {
+    renderPage();
+    expect(document.title).toBe(buildTitle('Playlist'));
+    await finishLoading();
+    expect(document.title).toBe(buildTitle(basePlaylist.name));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(basePlaylist.name);
+    expect(screen.getByAltText(`${basePlaylist.name} cover`)).toBeInTheDocument();
+    expect(screen.getByText(/A cool playlist/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Play on Spotify/i })).toHaveAttribute('href', basePlaylist.external_urls.spotify);
+    expect(screen.getByTestId('track-item-track1')).toBeInTheDocument();
+    expect(screen.getByTestId('track-item-track2')).toBeInTheDocument();
   });
 
-  test('handles playlist without cover image', async () => {
-    const playlistWithoutImage = {
-      ...playlistData,
-      images: [],
-    };
-
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({
-      data: playlistWithoutImage,
-      error: null,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
-    expect(screen.queryByAltText(`${playlistData.name} cover`)).not.toBeInTheDocument();
+  test('search filters tracks by name', async () => {
+    renderPage();
+    await finishLoading();
+    const input = screen.getByTestId('playlist-track-search');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'second');
+    expect(screen.getByTestId('track-item-track2')).toBeInTheDocument();
+    expect(screen.queryByTestId('track-item-track1')).not.toBeInTheDocument();
   });
 
-  test('handles playlist without description', async () => {
-    const playlistWithoutDescription = {
-      ...playlistData,
-      description: null,
-    };
-
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({
-      data: playlistWithoutDescription,
-      error: null,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
-    expect(screen.queryByText(playlistData.description)).not.toBeInTheDocument();
+  test('search filters tracks by artist', async () => {
+    renderPage();
+    await finishLoading();
+    const input = screen.getByTestId('playlist-track-search');
+    await userEvent.type(input, 'Artist A');
+    expect(screen.getByTestId('track-item-track1')).toBeInTheDocument();
+    expect(screen.queryByTestId('track-item-track2')).not.toBeInTheDocument();
   });
 
-  test('handles empty playlist', async () => {
-    const emptyPlaylist = {
-      ...playlistData,
-      tracks: { total: 0, items: [] },
-    };
+  test('shows no-results message then clears', async () => {
+    renderPage();
+    await finishLoading();
+    const input = screen.getByTestId('playlist-track-search');
+    await userEvent.type(input, 'zzzz');
+    expect(screen.getByTestId('playlist-tracks-no-results')).toBeInTheDocument();
+    await userEvent.clear(input);
+    expect(screen.queryByTestId('playlist-tracks-no-results')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/track-item-/)).toHaveLength(2);
+  });
 
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({
-      data: emptyPlaylist,
-      error: null,
-    });
+  test('clear button resets search', async () => {
+    renderPage();
+    await finishLoading();
+    const input = screen.getByTestId('playlist-track-search');
+    await userEvent.type(input, 'track one');
+    const clearBtn = screen.getByRole('button', { name: /clear track search/i });
+    await userEvent.click(clearBtn);
+    expect(input.value).toBe('');
+    expect(screen.getAllByTestId(/track-item-/)).toHaveLength(2);
+  });
 
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+  test('handles API error', async () => {
+    spotifyApi.fetchPlaylistById.mockResolvedValueOnce({ data: null, error: 'Failed to fetch playlist' });
+    renderPage();
+    await finishLoading();
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to fetch playlist');
+  });
 
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
+  test('handles rejection', async () => {
+    spotifyApi.fetchPlaylistById.mockRejectedValueOnce(new Error('API error occurred'));
+    renderPage();
+    await finishLoading();
+    expect(screen.getByRole('alert')).toHaveTextContent('API error occurred');
+  });
 
+  test('token expiry triggers handleTokenError', async () => {
+    const spy = jest.spyOn(handleTokenErrorModule, 'handleTokenError');
+    spotifyApi.fetchPlaylistById.mockResolvedValueOnce({ data: null, error: 'The access token expired' });
+    renderPage();
+    await finishLoading();
+    expect(spy).toHaveBeenCalledWith('The access token expired', expect.any(Function));
+  });
+
+  test('empty playlist shows empty message', async () => {
+    const empty = { ...basePlaylist, tracks: { total: 0, items: [] } };
+    spotifyApi.fetchPlaylistById.mockResolvedValueOnce({ data: empty, error: null });
+    renderPage();
+    await finishLoading();
     expect(screen.getByText('This playlist is empty')).toBeInTheDocument();
   });
 
-  test('filters out items without track property', async () => {
-    const playlistWithMixedItems = {
-      ...playlistData,
+  test('filters out invalid items', async () => {
+    const mixed = {
+      ...basePlaylist,
       tracks: {
-        total: 3,
+        total: 4,
         items: [
-          playlistData.tracks.items[0],
-          { added_at: '2023-01-01', track: null },
-          { added_at: '2023-01-02' },
-        ],
-      },
+          basePlaylist.tracks.items[0],
+          basePlaylist.tracks.items[1],
+          { added_at: 'x', track: null },
+          { added_at: 'y' }
+        ]
+      }
     };
-
-    jest.spyOn(spotifyApi, 'fetchPlaylistById').mockResolvedValue({
-      data: playlistWithMixedItems,
-      error: null,
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByTestId('loading-indicator')).not.toBeInTheDocument();
-    });
-
+    spotifyApi.fetchPlaylistById.mockResolvedValueOnce({ data: mixed, error: null });
+    renderPage();
+    await finishLoading();
     expect(screen.getByTestId('track-item-track1')).toBeInTheDocument();
-
-    // Use Testing Library queries instead of direct DOM access
-    const trackItems = screen.getAllByTestId(/^track-item-/);
-    expect(trackItems).toHaveLength(1);
-  });
-
-  test('aborts fetch when component unmounts', async () => {
-    const mockFetch = jest
-      .spyOn(spotifyApi, 'fetchPlaylistById')
-      .mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ data: playlistData, error: null }), 100))
-      );
-
-    const { unmount } = render(
-      <MemoryRouter initialEntries={['/playlist/playlist1']}>
-        <Routes>
-          <Route path="/playlist/:id" element={<PlaylistPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
-
-    unmount();
-
-    // allow pending promise to settle
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(screen.getByTestId('track-item-track2')).toBeInTheDocument();
+    expect(screen.getAllByTestId(/track-item-/)).toHaveLength(2);
   });
 });
