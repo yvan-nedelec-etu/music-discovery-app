@@ -30,11 +30,11 @@ export default function PlaylistPage() {
       .then(res => {
         if (abort.signal.aborted) return;
         if (res?.error) {
-          if (!handleTokenError(res.error, navigate)) {
-            setError(res.error);
-          }
-          setLoading(false);
-          return;
+            if (!handleTokenError(res.error, navigate)) {
+              setError(res.error);
+            }
+            setLoading(false);
+            return;
         }
         setPlaylist(res.data);
         if (res.data?.name) {
@@ -51,9 +51,11 @@ export default function PlaylistPage() {
     return () => abort.abort();
   }, [token, id, navigate]);
 
-  // Derivations (unconditional to avoid hook count change)
-  const rawItems = playlist?.tracks?.items;
-  const trackItems = Array.isArray(rawItems) ? rawItems.filter(it => it && it.track) : [];
+  // Derivations (memoized to satisfy exhaustive-deps and keep hook order stable)
+  const trackItems = useMemo(() => {
+    const rawItems = playlist?.tracks?.items;
+    return Array.isArray(rawItems) ? rawItems.filter(it => it && it.track) : [];
+  }, [playlist]);
 
   const filteredTracks = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -80,7 +82,7 @@ export default function PlaylistPage() {
 
   const coverImage = playlist?.images?.[0]?.url;
 
-  // Render branches (no hooks after this point)
+  // Render branches
   if (loading) {
     return (
       <div className="playlist-page-container page-container">
@@ -202,11 +204,12 @@ export default function PlaylistPage() {
           )}
           {!showNoMatch && (
             <ol className="playlist-tracks-list" data-testid="playlist-tracks-list">
-              {filteredTracks.map(item => {
+              {filteredTracks.map((item, idx) => {
+                const key = item?.track?.id ?? (item?.added_at ? `added-${item.added_at}` : `idx-${idx}`);
                 if (!item?.track) return null;
                 return (
                   <TrackItem
-                    key={item.track.id || item.added_at || Math.random()}
+                    key={key}
                     track={item.track}
                   />
                 );
