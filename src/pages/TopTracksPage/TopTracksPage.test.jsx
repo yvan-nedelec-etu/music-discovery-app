@@ -72,14 +72,9 @@ describe('TopTracksPage', () => {
 
         // when loading is done, verify playlists content rendered and api called correctly
 
-        // should call fetchUserTopTracks with the token (now includes signal)
+        // should call fetchUserTopTracks with the token
         expect(spotifyApi.fetchUserTopTracks).toHaveBeenCalledTimes(1);
-        expect(spotifyApi.fetchUserTopTracks).toHaveBeenCalledWith(
-            tokenValue,
-            limit,
-            timeRange,
-            expect.objectContaining({ signal: expect.any(Object) })
-        );
+        expect(spotifyApi.fetchUserTopTracks).toHaveBeenCalledWith('test-token', limit, timeRange);
 
         // should render a heading of level 1 with text 'Your Top 2 Tracks of the Month'
         const heading = await screen.findByRole('heading', { level: 1, name: `Your Top ${tracksData.total} Tracks of the Month` });
@@ -123,7 +118,7 @@ describe('TopTracksPage', () => {
 
     test('redirects to login on token expiration', async () => {
         // Mock fetchUserTopTracks to return token expired error
-        jest.spyOn(spotifyApi, 'fetchUserTopTracks').mockResolvedValue({ data: null, error: 'The access token expired' });
+        jest.spyOn(spotifyApi, 'fetchUserTopTracks').mockResolvedValue({ tracks: [], error: 'The access token expired' });
 
         // Render the TopTracksPage
         renderTopTracksPage();
